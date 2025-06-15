@@ -31,7 +31,7 @@ public class UserController {
 
     @Getter
     public static class UserDto {
-        private int id;
+        private Integer id;
         private String name;
         private String email;
         private Integer age;
