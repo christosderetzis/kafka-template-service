@@ -10,4 +10,10 @@ server:
   port: 9090
 logging:
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [%traceId:%X{traceId} spanId:%X{spanId}] %msg%n"
+    # For console logs
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:) [%X{traceId:-},%X{spanId:-}] %m%n"
+    # For file logs (optional)
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${PID:-} [%t] %logger{40} [%X{traceId:-},%X{spanId:-}] %m%n"
+management:
+  tracing:
+   enabled: true

@@ -1,7 +1,6 @@
 package org.kafka.template.kafkatemplateservice.config;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
-import io.confluent.kafka.serializers.KafkaJsonSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -42,7 +41,9 @@ public class KafkaProducerConfig {
 
     @Bean
     public KafkaTemplate<String, Object> jsonKafkaTemplate() {
-        return new KafkaTemplate<>(jsonProducerFactory());
+        KafkaTemplate<String, Object> template = new KafkaTemplate<>(jsonProducerFactory());
+        template.setObservationEnabled(true);
+        return template;
     }
 
 }

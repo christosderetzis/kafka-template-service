@@ -45,6 +45,7 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, Object> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
+        factory.getContainerProperties().setObservationEnabled(true);
         factory.setConsumerFactory(consumerFactory());
 
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(dltKafkaTemplate(),
