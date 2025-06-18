@@ -8,3 +8,14 @@ spring:
       user-created: user-created
 server:
   port: 9090
+logging:
+  pattern:
+    # For console logs
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:) [%X{traceId:-},%X{spanId:-}] %m%n"
+    # For file logs (optional)
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${PID:-} [%t] %logger{40} [%X{traceId:-},%X{spanId:-}] %m%n"
+management:
+  tracing:
+   enabled: true
+   sampling:
+     probability: 1.0
