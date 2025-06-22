@@ -28,7 +28,7 @@ class KafkaTemplateServiceApplicationTests extends BaseKafkaFunctionalSpec {
         //then assertLog
         await()
                 .atMost(Duration.ofSeconds(5))
-                .until(() -> assertLog(Level.INFO, "Consumed valid user: User(id=1, name=John Doe, email=john.doe@gmail.com, age=30)");
+                .until(() -> assertLog(Level.INFO, "Consumed valid user: User(id=1, name=John Doe, email=john.doe@gmail.com, age=30)"));
     }
 
 }
