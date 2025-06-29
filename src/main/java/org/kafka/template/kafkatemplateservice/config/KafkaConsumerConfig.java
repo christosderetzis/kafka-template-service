@@ -1,6 +1,7 @@
 package org.kafka.template.kafkatemplateservice.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -70,7 +71,7 @@ public class KafkaConsumerConfig {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class); // use JsonSerializer if needed
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaJsonSchemaDeserializer.class); // use JsonSerializer if needed
         return new DefaultKafkaProducerFactory<>(config);
     }
 

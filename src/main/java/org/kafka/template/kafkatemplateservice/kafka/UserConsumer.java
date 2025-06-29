@@ -27,7 +27,9 @@ public class UserConsumer {
     public void consume(ConsumerRecord<String, String> record, Acknowledgment ack) {
         try {
 
-            User user = mapper.readValue(record.value(), User.class);
+            log.info("Received record {}", record.value());
+            String cleanJson = record.value().replaceAll("\\p{Cntrl}", "");
+            User user = mapper.readValue(cleanJson, User.class);
             validatorUtils.validate(user);
 
             log.info("Consumed valid user: {}. partition: {}, offset: {}, key: {}", user, record.partition(), record.offset(), record.key());

@@ -1,5 +1,7 @@
 package org.kafka.template.kafkatemplateservice.config;
 
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -10,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.Properties;
 
@@ -28,7 +29,7 @@ public class TestKafkaConfiguration {
         Properties jsonProducerProps = new Properties();
         jsonProducerProps.put(ProducerConfig.ACKS_CONFIG, "all");
         jsonProducerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        jsonProducerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        jsonProducerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaJsonSchemaSerializer.class);
         jsonProducerProps.put(KafkaJsonSchemaSerializerConfig.LATEST_COMPATIBILITY_STRICT, "false");
         jsonProducerProps.put(KafkaJsonSchemaSerializerConfig.FAIL_INVALID_SCHEMA, "false");
         jsonProducerProps.put(KafkaJsonSchemaSerializerConfig.USE_LATEST_VERSION, "true");
@@ -40,11 +41,24 @@ public class TestKafkaConfiguration {
     }
 
     @Bean
-    public Properties consumerProps() {
+    public Properties jsonconsumerProps() {
         Properties consumerProps = new Properties();
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "user-group");
+        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaJsonSchemaDeserializer.class);
+        consumerProps.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        return consumerProps;
+    }
+
+    @Bean
+    public Properties errorConsumerProps() {
+        Properties consumerProps = new Properties();
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "func-test-error");
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -58,7 +72,8 @@ public class TestKafkaConfiguration {
         return new KafkaActor(
                 bootstrapServers,
                 jsonProducerProps(),
-                consumerProps(),
+                jsonconsumerProps(),
+                errorConsumerProps(),
                 userCreatedTopicName
         );
     }

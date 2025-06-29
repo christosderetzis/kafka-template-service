@@ -1,6 +1,7 @@
 package org.kafka.template.kafkatemplateservice.config;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -10,7 +11,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,11 +31,12 @@ public class KafkaProducerConfig {
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
                 StringSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-                JsonSerializer.class);
+                KafkaJsonSchemaSerializer.class);
         config.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
-        config.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, "false");
-        config.put(AbstractKafkaSchemaSerDeConfig.USE_LATEST_VERSION, "true");
-        config.put(KafkaJsonSchemaSerializerConfig.FAIL_INVALID_SCHEMA, "true");
+        config.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, false);
+        config.put(AbstractKafkaSchemaSerDeConfig.USE_LATEST_VERSION, true);
+        config.put(AbstractKafkaSchemaSerDeConfig.LATEST_COMPATIBILITY_STRICT, false);
+        config.put(KafkaJsonSchemaSerializerConfig.FAIL_INVALID_SCHEMA, true);
         return new DefaultKafkaProducerFactory<>(config);
     }
 
@@ -45,5 +46,4 @@ public class KafkaProducerConfig {
         template.setObservationEnabled(true);
         return template;
     }
-
 }

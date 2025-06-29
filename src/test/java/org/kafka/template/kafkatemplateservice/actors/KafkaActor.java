@@ -20,11 +20,12 @@ import java.util.Properties;
 public class KafkaActor {
 
     private static KafkaAdmin kafkaAdmin;
-    private static KafkaConsumer<String, String> consumer;
+    private static KafkaConsumer<String, String> jsonConsumer;
+    private static KafkaConsumer<String, String> errorConsumer;
     private static KafkaProducer<String, Object> producer;
     private final List<String> topics = new ArrayList<>();
 
-    public KafkaActor(String bootstrapServers, Properties producerProps, Properties consumerProps, String topic) {
+    public KafkaActor(String bootstrapServers, Properties producerProps, Properties jsonConsumerProps, Properties errorConsumerProps, String topic) {
         log.info("KafkaActor initialized with KafkaAdmin, Consumer, and Producer");
         topics.addAll(List.of("user-created", "user-created-dlt"));
 
@@ -39,8 +40,11 @@ public class KafkaActor {
 
         producer = new KafkaProducer<String, Object>(producerProps);
 
-        consumer = new KafkaConsumer<String, String>(consumerProps);
-        consumer.subscribe(topics);
+        jsonConsumer = new KafkaConsumer<String, String>(jsonConsumerProps);
+        jsonConsumer.subscribe(List.of(topics.getFirst()));
+
+        errorConsumer = new KafkaConsumer<String, String>(errorConsumerProps);
+        errorConsumer.subscribe(List.of(topics.get(1)));
     }
 
     public RecordMetadata produce(String key, Object value) throws Exception {
@@ -52,7 +56,7 @@ public class KafkaActor {
     }
 
    public List<ConsumerRecord<String, String>> consume(int maxRecords) {
-        ConsumerRecords<String, String> records = consumer.poll(java.time.Duration.ofMillis(1000));
+        ConsumerRecords<String, String> records = jsonConsumer.poll(java.time.Duration.ofMillis(1000));
         List<ConsumerRecord<String, String>> recordList = new ArrayList<>();
         for (ConsumerRecord<String, String> record : records) {
             if (recordList.size() < maxRecords) {
@@ -63,9 +67,26 @@ public class KafkaActor {
                 break;
             }
         }
-        consumer.commitSync();
+        jsonConsumer.commitSync();
         log.info("Committed offsets for consumed messages");
         return recordList;
+    }
+
+    public List<ConsumerRecord<String, String>> consumeError(int maxRecords) {
+        ConsumerRecords<String, String> records = errorConsumer.poll(java.time.Duration.ofMillis(1000));
+        List<ConsumerRecord<String, String>> errorList = new ArrayList<>();
+        for (ConsumerRecord<String, String> record : records) {
+            if (errorList.size() < maxRecords) {
+                errorList.add(record);
+                log.error("Consumed error message from topic: {}, partition: {}, offset: {}, key: {}, value: {}",
+                          record.topic(), record.partition(), record.offset(), record.key(), record.value());
+            } else {
+                break;
+            }
+        }
+        errorConsumer.commitSync();
+        log.info("Committed offsets for consumed error messages");
+        return errorList;
     }
 
     public void close() {
@@ -73,8 +94,8 @@ public class KafkaActor {
             producer.close();
             log.info("KafkaProducer closed");
         }
-        if (consumer != null) {
-            consumer.close();
+        if (jsonConsumer != null) {
+            jsonConsumer.close();
             log.info("KafkaConsumer closed");
         }
     }

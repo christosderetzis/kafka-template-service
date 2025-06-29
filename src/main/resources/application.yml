@@ -2,8 +2,8 @@ spring:
   application:
     name: kafka-template-service
   kafka:
-    bootstrap-servers: localhost:9092
-    schema-registry-url: localhost:8081
+    bootstrap-servers: http://localhost:9092
+    schema-registry-url: http://localhost:8081
     topics:
       user-created: user-created
 server:
