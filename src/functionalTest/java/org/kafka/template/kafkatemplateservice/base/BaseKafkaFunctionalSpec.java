@@ -13,13 +13,16 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.kafka.template.kafkatemplateservice.actors.KafkaActor;
+import org.kafka.template.kafkatemplateservice.actors.WebActor;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.util.StreamUtils;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
@@ -35,6 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient(timeout = "PT30S")
 @Slf4j
 public class BaseKafkaFunctionalSpec {
 
@@ -64,6 +68,12 @@ public class BaseKafkaFunctionalSpec {
 
     @Value("${spring.kafka.topics.user-created}")
     protected String userCreatedTopicName;
+
+    @Autowired
+    private WebTestClient webClient;
+
+    @Autowired
+    protected WebActor webActor;
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
@@ -126,10 +136,11 @@ public class BaseKafkaFunctionalSpec {
     void setup() {
         startLogAppender();
         appender.list.clear();
+        webActor.setupWebTestClient(webClient);
     }
 
     @BeforeAll
-    static void setupContainer() throws IOException, InterruptedException {
+     static void setupContainer() throws IOException, InterruptedException {
         kafkaContainer.start();
         schemaRegistry.start();
         insertSchemaToCluster("user-created", "schemas/user.json");

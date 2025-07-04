@@ -39,23 +39,20 @@ public class KafkaActor {
         }
 
         producer = new KafkaProducer<String, Object>(producerProps);
-
         jsonConsumer = new KafkaConsumer<String, String>(jsonConsumerProps);
-        jsonConsumer.subscribe(List.of(topics.getFirst()));
-
         errorConsumer = new KafkaConsumer<String, String>(errorConsumerProps);
-        errorConsumer.subscribe(List.of(topics.get(1)));
     }
 
-    public RecordMetadata produce(String key, Object value) throws Exception {
-        RecordMetadata recordMetadata = producer.send(new ProducerRecord<>(topics.get(0), key, value)).get();
+    public RecordMetadata produce(String key, Object value, String topic) throws Exception {
+        RecordMetadata recordMetadata = producer.send(new ProducerRecord<>(topic, key, value)).get();
         log.info("Produced message to topic: {}, partition: {}, offset: {}",
                  recordMetadata.topic(), recordMetadata.partition(), recordMetadata.offset());
         producer.flush();
         return recordMetadata;
     }
 
-   public List<ConsumerRecord<String, String>> consume(int maxRecords) {
+   public List<ConsumerRecord<String, String>> consume(int maxRecords, String topic) {
+        jsonConsumer.subscribe(List.of(topic));
         ConsumerRecords<String, String> records = jsonConsumer.poll(java.time.Duration.ofMillis(1000));
         List<ConsumerRecord<String, String>> recordList = new ArrayList<>();
         for (ConsumerRecord<String, String> record : records) {
@@ -68,25 +65,8 @@ public class KafkaActor {
             }
         }
         jsonConsumer.commitSync();
-        log.info("Committed offsets for consumed messages");
+        log.info("Committed offsets for consumed messages from topic: {}", topic);
         return recordList;
-    }
-
-    public List<ConsumerRecord<String, String>> consumeError(int maxRecords) {
-        ConsumerRecords<String, String> records = errorConsumer.poll(java.time.Duration.ofMillis(1000));
-        List<ConsumerRecord<String, String>> errorList = new ArrayList<>();
-        for (ConsumerRecord<String, String> record : records) {
-            if (errorList.size() < maxRecords) {
-                errorList.add(record);
-                log.error("Consumed error message from topic: {}, partition: {}, offset: {}, key: {}, value: {}",
-                          record.topic(), record.partition(), record.offset(), record.key(), record.value());
-            } else {
-                break;
-            }
-        }
-        errorConsumer.commitSync();
-        log.info("Committed offsets for consumed error messages");
-        return errorList;
     }
 
     public void close() {
