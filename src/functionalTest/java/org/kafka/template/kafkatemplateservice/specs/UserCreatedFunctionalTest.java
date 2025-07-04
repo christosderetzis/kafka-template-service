@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.kafka.template.kafkatemplateservice.base.BaseKafkaFunctionalSpec;
 import org.kafka.template.kafkatemplateservice.controllers.UserController;
+import org.kafka.template.kafkatemplateservice.models.User;
+
+import java.util.UUID;
 
 import static org.awaitility.Awaitility.await;
 
@@ -66,5 +69,22 @@ class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
         await().untilAsserted(() -> {
             Assertions.assertTrue(assertLog(Level.WARN, "Underage user detected: User(id=3, name=Jane Doe, email=null, age=15)"));
         });
+    }
+
+    @Test
+    void givenInvalidUserPayload_SchemaValidationWillFail_OnConsumerSide() throws Exception {
+        // given we have a user with invalid data
+        User user = User.builder()
+                .id(4)
+                .build();
+
+        // when we produce the user to the Kafka topic
+        kafkaActor.produce(UUID.randomUUID().toString(), user, "user-created");
+
+        // then we expect the schema validation to fail
+        await().untilAsserted(() -> {
+            Assertions.assertTrue(assertLog(Level.ERROR, "Invalid user payload received:"));
+        });
+        Assertions.assertEquals(1, kafkaActor.consume(10000, "user-created-dlt").size());
     }
 }

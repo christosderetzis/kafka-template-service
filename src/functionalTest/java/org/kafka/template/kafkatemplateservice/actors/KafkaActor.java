@@ -51,20 +51,21 @@ public class KafkaActor {
         return recordMetadata;
     }
 
-   public List<ConsumerRecord<String, String>> consume(int maxRecords, String topic) {
-        jsonConsumer.subscribe(List.of(topic));
-        ConsumerRecords<String, String> records = jsonConsumer.poll(java.time.Duration.ofMillis(1000));
+    public List<ConsumerRecord<String, String>> consume(int maxRecords, String topic) {
+        KafkaConsumer<String, String> consumer = topic.endsWith("-dlt") ? errorConsumer : jsonConsumer;
+        consumer.subscribe(List.of(topic));
+        ConsumerRecords<String, String> records = consumer.poll(java.time.Duration.ofMillis(1000));
         List<ConsumerRecord<String, String>> recordList = new ArrayList<>();
         for (ConsumerRecord<String, String> record : records) {
             if (recordList.size() < maxRecords) {
                 recordList.add(record);
                 log.info("Consumed message from topic: {}, partition: {}, offset: {}, key: {}, value: {}",
-                         record.topic(), record.partition(), record.offset(), record.key(), record.value());
+                        record.topic(), record.partition(), record.offset(), record.key(), record.value());
             } else {
                 break;
             }
         }
-        jsonConsumer.commitSync();
+        consumer.commitSync();
         log.info("Committed offsets for consumed messages from topic: {}", topic);
         return recordList;
     }

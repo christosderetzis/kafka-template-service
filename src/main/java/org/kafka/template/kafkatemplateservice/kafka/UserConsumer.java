@@ -40,7 +40,7 @@ public class UserConsumer {
             ack.acknowledge();
 
         } catch (ConstraintViolationException e) {
-            log.warn("Invalid user payload received: {}", e.getMessage());
+            log.error("Invalid user payload received: {}", e.getMessage());
             ack.acknowledge();
             throw e; // Re-throw to trigger error handling if necessary
         } catch (Exception e) {
