@@ -143,7 +143,7 @@ public class BaseKafkaFunctionalSpec {
      static void setupContainer() throws IOException, InterruptedException {
         kafkaContainer.start();
         schemaRegistry.start();
-        insertSchemaToCluster("user-created", "schemas/user.json");
+        insertSchemaToCluster("user-created", "schemas/user-schema.json");
     }
 
     @AfterAll
