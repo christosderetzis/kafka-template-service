@@ -1,5 +1,6 @@
 package org.kafka.template.kafkatemplateservice.controllers;
 
+import lombok.Builder;
 import lombok.Getter;
 import org.kafka.template.kafkatemplateservice.kafka.UserProducer;
 import org.kafka.template.kafkatemplateservice.models.User;
@@ -29,6 +30,7 @@ public class UserController {
         return "User created successfully";
     }
 
+    @Builder
     @Getter
     public static class UserDto {
         private Integer id;

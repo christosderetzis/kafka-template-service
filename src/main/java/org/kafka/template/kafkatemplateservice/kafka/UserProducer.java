@@ -1,6 +1,7 @@
 package org.kafka.template.kafkatemplateservice.kafka;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.errors.SerializationException;
 import org.kafka.template.kafkatemplateservice.models.User;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -27,8 +28,8 @@ public class UserProducer {
                 }
             });
             log.info("Sent user: {}", user);
-        } catch (Exception e) {
-            log.error("Failed to send user: {}", e.getMessage());
+        } catch (SerializationException e) {
+            log.error("Schema validation failed: {}", e.getMessage());
             throw new RuntimeException("Schema validation failed", e);
         }
     }
