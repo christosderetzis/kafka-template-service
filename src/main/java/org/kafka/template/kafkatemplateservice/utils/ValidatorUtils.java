@@ -10,8 +10,6 @@ import java.util.Set;
 @Slf4j
 @Component
 public class ValidatorUtils {
-
-
     private final Validator validator;
 
     public ValidatorUtils(Validator validator) {

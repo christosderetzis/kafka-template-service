@@ -24,12 +24,11 @@ public class UserConsumer {
 
     @Observed
     @KafkaListener(topics = "${spring.kafka.topics.user-created}", groupId = "user-group", containerFactory = "kafkaListenerContainerFactory")
-    public void consume(ConsumerRecord<String, String> record, Acknowledgment ack) {
+    public void consume(ConsumerRecord<String, Object> record, Acknowledgment ack) {
         try {
 
             log.info("Received record {}", record.value());
-            String cleanJson = record.value().replaceAll("\\p{Cntrl}", "");
-            User user = mapper.readValue(cleanJson, User.class);
+            User user = mapper.convertValue(record.value(), User.class);
             validatorUtils.validate(user);
 
             log.info("Consumed valid user: {}. partition: {}, offset: {}, key: {}", user, record.partition(), record.offset(), record.key());
