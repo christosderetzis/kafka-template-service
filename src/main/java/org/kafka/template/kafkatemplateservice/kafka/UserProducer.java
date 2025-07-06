@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.errors.SerializationException;
 import org.kafka.template.kafkatemplateservice.models.User;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +13,9 @@ import org.springframework.stereotype.Service;
 public class UserProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private static final String TOPIC = "user-created";
+
+    @Value("${spring.kafka.topics.user-created}")
+    private String userCreatedTopic;
 
     public UserProducer(@Qualifier("jsonKafkaTemplate") KafkaTemplate<String, Object> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
@@ -20,7 +23,7 @@ public class UserProducer {
 
     public void sendUser(User user) {
         try {
-            kafkaTemplate.send(TOPIC, user).whenComplete((result, ex) -> {
+            kafkaTemplate.send(userCreatedTopic, user).whenComplete((result, ex) -> {
                 if (ex != null) {
                     log.error("Failed to send user: {}", ex.getMessage());
                 } else {
