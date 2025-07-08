@@ -1,6 +1,7 @@
 package org.kafka.template.kafkatemplateservice.kafka;
 
 import ch.qos.logback.classic.Level;
+import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ch.qos.logback.classic.Logger;
@@ -15,6 +16,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.kafka.template.kafkatemplateservice.base.BaseLogTest;
+import org.kafka.template.kafkatemplateservice.creators.UserCreator;
 import org.kafka.template.kafkatemplateservice.models.User;
 import org.kafka.template.kafkatemplateservice.utils.ValidatorUtils;
 import org.mockito.Mock;
@@ -30,7 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class UserConsumerTest {
+class UserConsumerTest extends BaseLogTest {
 
     @Mock
     private ValidatorUtils validatorUtils;
@@ -39,18 +42,16 @@ class UserConsumerTest {
     private Acknowledgment acknowledgment;
 
     private UserConsumer userConsumer;
-    private ListAppender<ILoggingEvent> listAppender;
-    private Logger logger;
 
     @BeforeEach
     void setUp() {
         userConsumer = new UserConsumer(validatorUtils);
+        setUpLogger(UserConsumer.class);
+    }
 
-        // Setup log appender
-        logger = (Logger) LoggerFactory.getLogger(UserConsumer.class);
-        listAppender = new ListAppender<>();
-        listAppender.start();
-        logger.addAppender(listAppender);
+    @AfterEach
+    void tearDown() {
+        tearDownLogger();
     }
 
     @ParameterizedTest
@@ -58,7 +59,9 @@ class UserConsumerTest {
     @ValueSource(ints = {18})
     void consume_ValidAdultUser_ShouldProcessSuccessfully(Integer age) {
         // Given
-        User user = createUser("John Doe", age, "john@example.com");
+        User user = UserCreator.createRandomUser();
+        user.setAge(age);
+
         ConsumerRecord<String, Object> record = createConsumerRecord("user-key", user, 0, 100L);
 
         doNothing().when(validatorUtils).validate(any(User.class));
@@ -78,7 +81,9 @@ class UserConsumerTest {
     @Test
     void consume_ValidUnderageUser_ShouldLogWarning() {
         // Given
-        User user = createUser("Jane Doe", 14, "jane@example.com");
+        User user = UserCreator.createRandomUser();
+        user.setAge(14); // Underage user
+
         ConsumerRecord<String, Object> record = createConsumerRecord("user-key", user, 1, 200L);
 
         doNothing().when(validatorUtils).validate(any(User.class));
@@ -98,7 +103,9 @@ class UserConsumerTest {
     @Test
     void consume_InvalidUser_ShouldLogErrorAndRethrowException() {
         // Given
-        User user = createUser("Invalid User", 25, "invalid-email");
+        User user = UserCreator.createRandomUser();
+        user.setEmail("invalid-email-format"); // Invalid email format
+
         ConsumerRecord<String, Object> record = createConsumerRecord("user-key", user, 0, 400L);
 
         ConstraintViolationException exception = new ConstraintViolationException("Invalid email format", null);
@@ -138,7 +145,9 @@ class UserConsumerTest {
     @Test
     void consume_EdgeCaseAge17_ShouldLogWarning() {
         // Given
-        User user = createUser("Minor User", 17, "minor@example.com");
+        User user = UserCreator.createRandomUser();
+        user.setAge(17); // Edge case for underage
+
         ConsumerRecord<String, Object> record = createConsumerRecord("user-key", user, 0, 800L);
 
         doNothing().when(validatorUtils).validate(any(User.class));
@@ -155,24 +164,7 @@ class UserConsumerTest {
         assertLog(Level.WARN, "Underage user detected");
     }
 
-    private User createUser(String name, Integer age, String email) {
-        User user = new User();
-        user.setId(1);
-        user.setName(name);
-        user.setAge(age);
-        user.setEmail(email);
-        return user;
-    }
-
     private ConsumerRecord<String, Object> createConsumerRecord(String key, Object value, int partition, long offset) {
         return new ConsumerRecord<>("user-created", partition, offset, key, value);
-    }
-
-    private void assertLog(Level level, String message) {
-        List<ILoggingEvent> logsList = listAppender.list;
-        boolean found = logsList.stream()
-                .anyMatch(event -> event.getLevel().equals(level) &&
-                        event.getFormattedMessage().contains(message));
-        assertTrue(found, "Expected log with level " + level + " and message containing: " + message);
     }
 }

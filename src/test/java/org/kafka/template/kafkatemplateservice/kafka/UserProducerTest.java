@@ -5,6 +5,7 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.kafka.template.kafkatemplateservice.base.BaseLogTest;
 import org.kafka.template.kafkatemplateservice.models.User;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,7 +26,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class UserProducerTest {
+class UserProducerTest extends BaseLogTest {
 
     @Mock
     private KafkaTemplate<String, Object> kafkaTemplate;
@@ -35,8 +36,6 @@ class UserProducerTest {
 
     private UserProducer userProducer;
     private User testUser;
-    private ListAppender<ILoggingEvent> listAppender;
-    private Logger logger;
 
     @BeforeEach
     void setUp() {
@@ -51,25 +50,12 @@ class UserProducerTest {
                 .age(25)
                 .build();
 
-        // Set up log capture
-        logger = (Logger) LoggerFactory.getLogger(UserProducer.class);
-        listAppender = new ListAppender<>();
-        listAppender.start();
-        logger.addAppender(listAppender);
+        setUpLogger(UserProducer.class);
     }
 
     @AfterEach
     void tearDown() {
-        // Clean up log appender
-        logger.detachAppender(listAppender);
-    }
-
-    private void assertLog(Level level, String message) {
-        List<ILoggingEvent> logsList = listAppender.list;
-        boolean found = logsList.stream()
-                .anyMatch(event -> event.getLevel().equals(level) &&
-                        event.getFormattedMessage().contains(message));
-        assertTrue(found, "Expected log with level " + level + " and message containing: " + message);
+        tearDownLogger();
     }
 
     @Test
