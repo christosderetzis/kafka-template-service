@@ -1,7 +1,6 @@
 package org.kafka.template.kafkatemplateservice.controllers;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+import org.kafka.template.kafkatemplateservice.DTOs.UserCreatedDto;
 import org.kafka.template.kafkatemplateservice.kafka.UserProducer;
 import org.kafka.template.kafkatemplateservice.models.User;
 import static org.mockito.Mockito.*;
@@ -41,7 +40,8 @@ public class UserControllerTest {
     @Test
     void createUser_ShouldReturnSuccessMessage() throws Exception {
         // Arrange
-        UserController.UserDto userDto = UserController.UserDto.builder()
+        UserCreatedDto userDto = UserCreatedDto
+                .builder()
                 .id(1)
                 .name("John Doe")
                 .email("john.doe@example.com")

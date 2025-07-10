@@ -3,8 +3,8 @@ package org.kafka.template.kafkatemplateservice.specs;
 import ch.qos.logback.classic.Level;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.kafka.template.kafkatemplateservice.DTOs.UserCreatedDto;
 import org.kafka.template.kafkatemplateservice.base.BaseKafkaFunctionalSpec;
-import org.kafka.template.kafkatemplateservice.controllers.UserController;
 import org.kafka.template.kafkatemplateservice.models.User;
 
 import java.util.UUID;
@@ -16,7 +16,7 @@ class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
     @Test
     void givenInvalidUser_SchemaValidationWillFail_OnProducerSide() throws Exception {
         // Given we have a user with invalid data
-        UserController.UserDto userDto = UserController.UserDto
+        UserCreatedDto userDto = UserCreatedDto
                 .builder()
                 .id(1)
                 .build();
@@ -33,7 +33,7 @@ class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
     @Test
     void givenValidUser_SchemaValidationWillPass_OnProducerSide() throws Exception {
         // Given we have a user with valid data
-        UserController.UserDto userDto = UserController.UserDto
+        UserCreatedDto userDto = UserCreatedDto
                 .builder()
                 .id(1)
                 .name("John Doe")
@@ -54,7 +54,7 @@ class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
     @Test
     void givenUnderageUser_WarningWillBeLogged_OnConsumerSide() throws Exception {
         // Given we have an underage user
-        UserController.UserDto userDto = UserController.UserDto
+        UserCreatedDto userDto = UserCreatedDto
                 .builder()
                 .id(3)
                 .name("Jane Doe")
