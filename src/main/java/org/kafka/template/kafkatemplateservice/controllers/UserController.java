@@ -1,7 +1,6 @@
 package org.kafka.template.kafkatemplateservice.controllers;
 
-import lombok.Builder;
-import lombok.Getter;
+import org.kafka.template.kafkatemplateservice.DTOs.UserCreatedDto;
 import org.kafka.template.kafkatemplateservice.kafka.UserProducer;
 import org.kafka.template.kafkatemplateservice.models.User;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,26 +17,15 @@ public class UserController {
     }
 
     @PostMapping("/users")
-    public String createUser(@RequestBody UserDto userDto) {
+    public String createUser(@RequestBody UserCreatedDto userCreatedDto) {
         User user = User.builder()
-                .id(userDto.getId())
-                .name(userDto.getName())
-                .email(userDto.getEmail())
-                .age(userDto.getAge())
+                .id(userCreatedDto.getId())
+                .name(userCreatedDto.getName())
+                .email(userCreatedDto.getEmail())
+                .age(userCreatedDto.getAge())
                 .build();
 
         userProducer.sendUser(user);
         return "User created successfully";
-    }
-
-    @Builder
-    @Getter
-    public static class UserDto {
-        private Integer id;
-        private String name;
-        private String email;
-        private Integer age;
-
-        // Getters and setters
     }
 }

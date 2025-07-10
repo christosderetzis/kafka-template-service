@@ -27,7 +27,7 @@ public class UserConsumer {
     public void consume(ConsumerRecord<String, Object> record, Acknowledgment ack) {
         try {
 
-            log.info("Received record {}", record.value());
+            log.info("Received record: {}", record.value());
             User user = mapper.convertValue(record.value(), User.class);
             validatorUtils.validate(user);
 
