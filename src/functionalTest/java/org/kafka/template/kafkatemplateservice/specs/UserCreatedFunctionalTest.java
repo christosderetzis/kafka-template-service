@@ -46,7 +46,8 @@ class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
 
         // Then we expect the schema validation to pass
         await().untilAsserted(() -> {
-            Assertions.assertTrue(assertLog(Level.INFO, "User sent successfully: User(id=1, name=John Doe, email=john.doe@mail.com, age=30)"));
+            Assertions.assertTrue(assertLog(Level.INFO, "User sent successfully with key:"));
+            Assertions.assertTrue(assertLog(Level.INFO, "and value: User(id=1, name=John Doe, email=john.doe@mail.com, age=30)"));
             Assertions.assertTrue(assertLog(Level.INFO, "Consumed valid user: User(id=1, name=John Doe, email=john.doe@mail.com, age=30)"));
         });
     }
