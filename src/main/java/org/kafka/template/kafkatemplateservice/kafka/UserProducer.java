@@ -1,5 +1,6 @@
 package org.kafka.template.kafkatemplateservice.kafka;
 
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.errors.SerializationException;
 import org.kafka.template.kafkatemplateservice.models.User;
@@ -23,11 +24,11 @@ public class UserProducer {
 
     public void sendUser(User user) {
         try {
-            kafkaTemplate.send(userCreatedTopic, user).whenComplete((result, ex) -> {
+            kafkaTemplate.send(userCreatedTopic, UUID.randomUUID().toString(), user).whenComplete((result, ex) -> {
                 if (ex != null) {
                     log.error("Failed to send user: {}", ex.getMessage());
                 } else {
-                    log.info("User sent successfully: {}", user);
+                    log.info("User sent successfully with key: {} and value: {}", result.getProducerRecord().key(), result.getProducerRecord().value());
                 }
             });
             log.info("Sent user: {}", user);
