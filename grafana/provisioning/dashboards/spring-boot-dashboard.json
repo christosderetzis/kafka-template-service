@@ -1,0 +1,88 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Spring Boot Application Metrics",
+    "tags": ["spring-boot", "kafka"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "JVM Memory Usage",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"} * 100",
+            "legendFormat": "Heap Usage %"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "HTTP Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count[5m])",
+            "legendFormat": "{{method}} {{uri}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "yAxes": [
+          {
+            "label": "Requests/sec",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Kafka Producer Send Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "kafka_producer_record_send_rate",
+            "legendFormat": "Records/sec"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "yAxes": [
+          {
+            "label": "Records/sec",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Kafka Consumer Lag",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "kafka_consumer_records_lag",
+            "legendFormat": "Consumer Lag"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "yAxes": [
+          {
+            "label": "Records",
+            "min": 0
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}
