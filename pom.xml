@@ -11,6 +11,7 @@
     <groupId>org.kafka.template</groupId>
     <artifactId>kafka-template-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
     <name>kafka-template-service</name>
     <description>kafka-template-service</description>
     <url/>
@@ -20,6 +21,11 @@
     <developers>
         <developer/>
     </developers>
+    <modules>
+        <module>producer-app</module>
+        <module>common-module</module>
+        <module>consumer-app</module>
+    </modules>
     <scm>
         <connection/>
         <developerConnection/>
@@ -120,12 +126,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.javafaker</groupId>
-            <artifactId>javafaker</artifactId>
-            <version>1.0.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
             <scope>runtime</scope>
@@ -163,45 +163,6 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                         </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.13</version>
-                <executions>
-                    <execution>
-                        <id>prepare-agent</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <rules>
-                        <rule>
-                            <element>CLASS</element>
-                            <limits>
-                                <limit>
-                                    <counter>LINE</counter>
-                                    <value>COVEREDRATIO</value>
-                                    <minimum>0.80</minimum>
-                                </limit>
-                            </limits>
-                        </rule>
-                    </rules>
-                    <excludes>
-                        <exclude>org/kafka/template/kafkatemplateservice/config/**</exclude>
-                        <exclude>org/kafka/template/kafkatemplateservice/models/**</exclude>
-                        <exclude>org/kafka/template/kafkatemplateservice/KafkaTemplateServiceApplication.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>
