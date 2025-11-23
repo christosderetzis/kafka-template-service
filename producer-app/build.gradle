@@ -1,0 +1,89 @@
+plugins {
+    id 'jacoco'
+}
+
+dependencies {
+    implementation project(':common-module')
+    testImplementation project(':common-module').sourceSets.test.output
+}
+
+// Functional tests configuration
+sourceSets {
+    functionalTest {
+        java {
+            srcDir 'src/functionalTest/java'
+        }
+        resources {
+            srcDir 'src/functionalTest/resources'
+        }
+        compileClasspath += sourceSets.main.output + sourceSets.test.output
+        runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+    }
+}
+
+configurations {
+    functionalTestImplementation.extendsFrom testImplementation
+    functionalTestRuntimeOnly.extendsFrom testRuntimeOnly
+    functionalTestCompileOnly.extendsFrom testCompileOnly
+    functionalTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+}
+
+task functionalTest(type: Test) {
+    description = 'Runs functional tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.functionalTest.output.classesDirs
+    classpath = sourceSets.functionalTest.runtimeClasspath
+
+    shouldRunAfter test
+
+    useJUnitPlatform()
+}
+
+// JaCoCo configuration
+jacoco {
+    toolVersion = '0.8.13'
+}
+
+jacocoTestReport {
+    dependsOn test
+
+    reports {
+        xml.required = true
+        html.required = true
+    }
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/config/**',
+                '**/ProducerModuleApplication.class'
+            ])
+        }))
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            element = 'CLASS'
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
+            }
+            excludes = [
+                '*.config.*',
+                '*.ProducerModuleApplication'
+            ]
+        }
+    }
+}
+
+test {
+    finalizedBy jacocoTestReport
+}
+
+check {
+    dependsOn jacocoTestCoverageVerification
+}
