@@ -1,0 +1,18 @@
+// Common module is a library, not a Spring Boot application
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}
+
+// Create a test JAR for sharing test utilities
+task testJar(type: Jar) {
+    archiveClassifier = 'tests'
+    from sourceSets.test.output
+}
+
+artifacts {
+    testRuntimeOnly testJar
+}

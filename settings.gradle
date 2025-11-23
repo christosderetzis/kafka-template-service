@@ -1,0 +1,5 @@
+rootProject.name = 'kafka-template-service'
+
+include 'common-module'
+include 'producer-app'
+include 'consumer-app'

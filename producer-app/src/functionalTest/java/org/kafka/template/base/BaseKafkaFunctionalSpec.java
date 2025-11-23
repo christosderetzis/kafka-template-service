@@ -8,6 +8,7 @@ import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -103,7 +104,7 @@ public class BaseKafkaFunctionalSpec {
         assert actualCount == count;
     }
 
-    protected static void insertSchemaToCluster(String topicName, String schemaResource) throws IOException, InterruptedException {
+    protected static void insertSchemaToCluster(String topicName, String schemaResource) throws IOException, InterruptedException, JSONException {
         String rawSchema = readFromFileToString(schemaResource);
         String schemaDescription = new JSONObject()
                 .put("schemaType", "JSON")
@@ -140,7 +141,7 @@ public class BaseKafkaFunctionalSpec {
     }
 
     @BeforeAll
-     static void setupContainer() throws IOException, InterruptedException {
+     static void setupContainer() throws IOException, InterruptedException, JSONException {
         kafkaContainer.start();
         schemaRegistry.start();
         insertSchemaToCluster("user-created", "schemas/user-schema.json");

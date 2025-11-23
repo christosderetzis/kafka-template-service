@@ -4,7 +4,7 @@ This is a Spring Boot multi-module application that demonstrates the use of Kafk
 
 ## Project Structure
 
-The project is organized as a Maven multi-module application:
+The project is organized as a multi-module application:
 
 * **common-module**: Shared DTOs, models, and utilities used by both producer and consumer
 * **producer-app**: Spring Boot application that exposes REST API and produces messages to Kafka (runs on port 9091)
@@ -17,28 +17,37 @@ These instructions will get you a copy of the project up and running on your loc
 ### Prerequisites
 
 * Java 21
-* Maven
 * Docker (for running Kafka and related services)
+
+**Note:** Gradle wrapper is included in the project, so you don't need to install Gradle separately.
 
 ### Building the project
 
-To build the entire project (all modules), run the following command in the root directory:
+To build the entire project (all modules):
 
 ```bash
-./mvnw clean install
+./gradlew build
 ```
 
-**Important:** Before running or testing individual modules, you should build the entire project at least once. This ensures the common-module is installed in your local Maven repository and available to other modules.
-
-To build a specific module (the `-am` flag builds required dependencies):
+To build a specific module:
 
 ```bash
-./mvnw clean install -pl producer-app -am
-./mvnw clean install -pl consumer-app -am
-./mvnw clean install -pl common-module
+./gradlew :producer-app:build
+./gradlew :consumer-app:build
+./gradlew :common-module:build
 ```
 
-**Tip:** If you encounter dependency resolution errors, run `./mvnw clean install -U` from the root directory to force update all dependencies.
+To clean and build:
+
+```bash
+./gradlew clean build
+```
+
+To refresh dependencies:
+
+```bash
+./gradlew build --refresh-dependencies
+```
 
 ## Running the Infrastructure
 
@@ -61,9 +70,11 @@ docker-compose -f docker-compose-confluent.yml up -d
 To upload the user schema to the Schema Registry, you can use the following command:
 
 ```bash
-curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
---data @common-module/src/main/resources/schemas/user-schema.json \
-http://localhost:8081/subjects/user-created-value/versions
+curl -X POST \
+  -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+  --data "{\"schemaType\":\"JSON\", \"schema\":\"$(tr -d '\n\r' < common-module/src/main/resources/schemas/user-schema.json | sed 's/"/\\"/g')\"}" \
+  http://localhost:8081/subjects/user-created-value/versions
+
 ```
 
 ## Running the Modules
@@ -75,7 +86,7 @@ After starting the infrastructure with Docker Compose, you can run each module i
 The producer application exposes a REST API on port 9091:
 
 ```bash
-./mvnw spring-boot:run -pl producer-app -am
+./gradlew :producer-app:bootRun
 ```
 
 The application will be available at `http://localhost:9091`
@@ -85,7 +96,7 @@ The application will be available at `http://localhost:9091`
 The consumer application listens to Kafka topics on port 9090:
 
 ```bash
-./mvnw spring-boot:run -pl consumer-app -am
+./gradlew :consumer-app:bootRun
 ```
 
 The application will be available at `http://localhost:9090`
@@ -133,73 +144,76 @@ The `UserConsumer` class is responsible for consuming user information from the 
 
 ### Running Unit Tests
 
-To run unit tests across all modules (automatically excludes functional tests):
+Run all unit tests across all modules:
 
 ```bash
-./mvnw test
+./gradlew test
 ```
 
-**Note:** Functional tests are located in `src/functionalTest/java` and are automatically excluded from regular test runs. They only execute when the `-Pfunctional-tests` profile is explicitly activated.
+**Note:** Functional tests are located in `src/functionalTest/java` and are automatically excluded from regular test runs.
 
 ### Running Tests for Specific Modules
 
-To run unit tests for a specific module (the `-am` flag builds required dependencies):
-
 ```bash
 # Producer module tests
-./mvnw test -pl producer-app -am
+./gradlew :producer-app:test
 
 # Consumer module tests
-./mvnw test -pl consumer-app -am
+./gradlew :consumer-app:test
 
 # Common module tests
-./mvnw test -pl common-module
+./gradlew :common-module:test
 ```
 
 ### Running Functional Tests
 
-To run all functional tests across all modules:
-
 ```bash
-./mvnw verify -Pfunctional-tests
-```
+# All functional tests
+./gradlew functionalTest
 
-To run functional tests for a specific module (the `-am` flag builds required dependencies):
-
-```bash
 # Producer module functional tests
-./mvnw verify -Pfunctional-tests -pl producer-app -am
+./gradlew :producer-app:functionalTest
 
 # Consumer module functional tests
-./mvnw verify -Pfunctional-tests -pl consumer-app -am
+./gradlew :consumer-app:functionalTest
 ```
 
 ### Test Coverage
 
 The project uses JaCoCo for code coverage. After running tests, you can view the coverage reports at:
-- Producer module: `producer-app/target/site/jacoco/index.html`
-- Consumer module: `consumer-app/target/site/jacoco/index.html`
+
+- Producer module: `producer-app/build/reports/jacoco/test/html/index.html`
+- Consumer module: `consumer-app/build/reports/jacoco/test/html/index.html`
 
 **Note:** Each module generates its own coverage report. JaCoCo is configured for producer-app and consumer-app modules with an 80% line coverage requirement.
 
+Generate coverage reports:
+```bash
+./gradlew test jacocoTestReport
+```
+
+Check coverage verification:
+```bash
+./gradlew jacocoTestCoverageVerification
+```
+
 ### Troubleshooting Tests
 
-If you encounter dependency resolution errors when running tests on individual modules:
+Gradle automatically handles dependencies between modules, so you typically won't encounter dependency issues. If you do:
 
-1. **Build the entire project first:**
+1. **Clean and rebuild:**
    ```bash
-   ./mvnw clean install
+   ./gradlew clean build
    ```
 
-2. **Clear cached failures and force update:**
+2. **Refresh dependencies:**
    ```bash
-   ./mvnw clean install -U
+   ./gradlew build --refresh-dependencies
    ```
 
-3. **Always use the `-am` flag when testing individual modules:**
+3. **Run with debug info:**
    ```bash
-   ./mvnw test -pl consumer-app -am
-   ./mvnw verify -Pfunctional-tests -pl consumer-app -am
+   ./gradlew test --info
    ```
 
 ## Monitoring with Prometheus and Grafana
@@ -216,7 +230,7 @@ docker-compose -f docker-compose-monitoring.yml up -d
 
 ### Accessing the Monitoring Tools
 
-- **Prometheus UI**: http://localhost:9092
+- **Prometheus UI**: http://localhost:9093
   - Scrapes metrics from consumer-app (port 9090) and producer-app (port 9091)
   - Metrics endpoint: `/actuator/prometheus`
 
