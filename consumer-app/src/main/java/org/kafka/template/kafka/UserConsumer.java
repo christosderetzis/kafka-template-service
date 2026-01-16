@@ -5,7 +5,10 @@ import io.micrometer.observation.annotation.Observed;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.kafka.template.entity.UserEntity;
+import org.kafka.template.mapper.UserMapper;
 import org.kafka.template.models.User;
+import org.kafka.template.repository.UserRepository;
 import org.kafka.template.utils.ValidatorUtils;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
@@ -17,8 +20,12 @@ public class UserConsumer {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final ValidatorUtils validatorUtils;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    public UserConsumer(ValidatorUtils validatorUtils) {
+    public UserConsumer(ValidatorUtils validatorUtils, UserRepository userRepository, UserMapper userMapper) {
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
         this.validatorUtils = validatorUtils;
     }
 
@@ -36,6 +43,10 @@ public class UserConsumer {
             if (user.getAge() != null && user.getAge() < 18) {
                 log.warn("Underage user detected: {}", user);
             }
+
+            UserEntity userEntity = userMapper.toUserEntity(user);
+            userRepository.save(userEntity);
+            log.info("User saved to database with key: {}", userEntity.getId());
             ack.acknowledge();
 
         } catch (ConstraintViolationException e) {
