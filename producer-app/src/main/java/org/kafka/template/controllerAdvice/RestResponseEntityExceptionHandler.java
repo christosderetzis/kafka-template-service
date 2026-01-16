@@ -53,11 +53,6 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
         return logAndGetApiError(ex, request, HttpStatus.BAD_REQUEST, errors);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleAnyOtherException(Exception ex, HttpServletRequest request) {
-        return logAndGetApiError(ex, request, HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
-    }
-
     private ResponseEntity<ApiError> logAndGetApiError(Exception ex, HttpServletRequest request, HttpStatusCode status, String... errors) {
         logException(ex);
         return new ResponseEntity<>(ApiError.builder()
