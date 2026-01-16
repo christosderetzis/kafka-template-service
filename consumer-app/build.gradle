@@ -98,3 +98,11 @@ test {
 check {
     dependsOn jacocoTestCoverageVerification
 }
+
+tasks.named('processFunctionalTestResources') {
+    duplicatesStrategy = 'include'
+}
+
+processFunctionalTestResources {
+    duplicatesStrategy = 'include'
+}

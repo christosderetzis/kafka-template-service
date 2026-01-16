@@ -18,4 +18,4 @@ VALUES
      'cderetziy@gmail.com',
      'Christos Deretzis'
      25)
-    ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
