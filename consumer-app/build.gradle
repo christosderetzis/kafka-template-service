@@ -6,6 +6,10 @@ dependencies {
     implementation project(':common-module')
     implementation 'net.datafaker:datafaker:2.5.3'
     testImplementation project(':common-module').sourceSets.test.output
+
+    // postgresql + jpa
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'org.postgresql:postgresql'
 }
 
 // Functional tests configuration
@@ -58,6 +62,9 @@ jacocoTestReport {
         classDirectories.setFrom(files(classDirectories.files.collect {
             fileTree(dir: it, exclude: [
                 '**/config/**',
+                '**/entity/**',
+                '**/repository/**',
+                '**/mapper/**',
                 '**/ConsumerModuleApplication.class'
             ])
         }))
@@ -75,6 +82,9 @@ jacocoTestCoverageVerification {
             }
             excludes = [
                 '*.config.*',
+                '*.entity.*',
+                '*.repository.*',
+                '*.mapper.*',
                 '*.ConsumerModuleApplication'
             ]
         }

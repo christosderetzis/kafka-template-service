@@ -6,6 +6,21 @@ spring:
     schema-registry-url: http://localhost:8081
     topics:
       user-created: user-created
+  datasource:
+    url: jdbc:postgresql://localhost:${DB_PORT:5432}/consumer-db
+    username: consumer_user
+    password: consumer_password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
 server:
   port: 9090
 logging:

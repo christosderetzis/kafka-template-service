@@ -117,3 +117,16 @@ services:
     image: openzipkin/zipkin:latest
     ports:
       - 9411:9411
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: consumer-db
+      POSTGRES_USER: consumer_user
+      POSTGRES_PASSWORD: consumer_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
