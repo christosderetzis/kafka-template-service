@@ -1,33 +1,50 @@
 package org.kafka.template.specs;
 
 import ch.qos.logback.classic.Level;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.kafka.template.dtos.UserCreatedDto;
+import org.kafka.template.controllerAdvice.RestResponseEntityExceptionHandler;
+import org.kafka.template.dtos.GenericResponseDto;
+import org.kafka.template.dtos.UserCreatedRequestDto;
 import org.kafka.template.base.BaseKafkaFunctionalSpec;
+import org.kafka.template.enums.GenericResponseStatus;
 import org.kafka.template.models.User;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
-class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
+class UserProducerCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
 
     @Test
     void givenInvalidUser_SchemaValidationWillFail_OnProducerSide() throws Exception {
         // Given we have a user with invalid data
-        UserCreatedDto userDto = UserCreatedDto
+        UserCreatedRequestDto userDto = UserCreatedRequestDto
                 .builder()
                 .id(1)
                 .build();
 
         // When we try to create the user
-        webActor.createUser(userDto);
+        WebTestClient.ResponseSpec response = webActor.createUser(userDto);
+
+        response.expectStatus().isBadRequest();
+
+        RestResponseEntityExceptionHandler.ApiError responseBody = response
+                .expectBody(RestResponseEntityExceptionHandler.ApiError.class)
+                .returnResult()
+                .getResponseBody();
+
+        // And we expect an error response
+        assertNotNull(responseBody);
+        assertEquals(400, responseBody.getStatus());
+        assertEquals("POST", responseBody.getMethod());
+        assertEquals("/users", responseBody.getPath());
+        assertEquals(List.of("#/name: expected type: String, found: "), responseBody.getErrors());
 
         // Then we expect the schema validation to fail
         await().untilAsserted(() -> {
@@ -38,8 +55,9 @@ class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
     @Test
     void givenValidUser_SchemaValidationWillPass_OnProducerSide() throws Exception {
         // Given we have a user with valid data
-        UserCreatedDto userDto = UserCreatedDto
+        UserCreatedRequestDto userDto = UserCreatedRequestDto
                 .builder()
+
                 .id(1)
                 .name("John Doe")
                 .email("john.doe@mail.com")
@@ -47,7 +65,20 @@ class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
                 .build();
 
         // When we try to create the user
-        webActor.createUser(userDto);
+        WebTestClient.ResponseSpec response = webActor.createUser(userDto);
+        GenericResponseDto<UserCreatedRequestDto> responseBody = response
+                .expectStatus().is2xxSuccessful()
+                .expectBody(new ParameterizedTypeReference<GenericResponseDto<UserCreatedRequestDto>>() {
+                })
+                .returnResult()
+                .getResponseBody();
+
+        // 200 OK
+        response.expectStatus().is2xxSuccessful();
+
+        // And we expect a success response
+        assertNotNull(responseBody);
+        assertEquals(GenericResponseStatus.SUCCESS, responseBody.getStatus());
 
         // Then we expect the schema validation to pass
         await().untilAsserted(() -> {

@@ -45,6 +45,21 @@ jacoco {
     toolVersion = '0.8.13'
 }
 
+def jacocoExclusions = [
+        'org.kafka.template.config.*',
+        'org.kafka.template.config.**',
+        'org.kafka.template.mapper.*',
+        'org.kafka.template.mapper.**',
+        'org.kafka.template.dtos.*',
+        'org.kafka.template.dtos.**',
+        'org.kafka.template.enums.*',
+        'org.kafka.template.enums.**',
+        'org.kafka.template.*ProducerModuleApplication*',
+        '**.*MapperImpl',
+        'org.kafka.template.utils.ServletUtils*',
+        'org.kafka.template.controllerAdvice.*',
+]
+
 jacocoTestReport {
     dependsOn test
 
@@ -55,10 +70,7 @@ jacocoTestReport {
 
     afterEvaluate {
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                '**/config/**',
-                '**/ProducerModuleApplication.class'
-            ])
+            fileTree(dir: it, exclude: jacocoExclusions)
         }))
     }
 }
@@ -72,10 +84,7 @@ jacocoTestCoverageVerification {
                 value = 'COVEREDRATIO'
                 minimum = 0.80
             }
-            excludes = [
-                '*.config.*',
-                '*.ProducerModuleApplication'
-            ]
+            excludes = jacocoExclusions
         }
     }
 }

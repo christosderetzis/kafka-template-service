@@ -3,7 +3,6 @@ package org.kafka.template.specs;
 import ch.qos.logback.classic.Level;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.kafka.template.dtos.UserCreatedDto;
 import org.kafka.template.base.BaseKafkaFunctionalSpec;
 import org.kafka.template.models.User;
 

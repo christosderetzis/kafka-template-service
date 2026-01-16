@@ -1,9 +1,14 @@
 package org.kafka.template.controller;
 
-import org.kafka.template.dtos.UserCreatedDto;
+import org.kafka.template.dtos.GenericResponseDto;
+import org.kafka.template.dtos.UserCreatedRequestDto;
+import org.kafka.template.dtos.UserCreatedResponseDto;
+import org.kafka.template.enums.GenericResponseStatus;
 import org.kafka.template.kafka.UserProducer;
 import org.kafka.template.models.User;
 import static org.mockito.Mockito.*;
+
+import org.kafka.template.service.UserService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -17,8 +22,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @WebMvcTest(UserController.class)
 public class UserControllerTest {
 
@@ -26,7 +29,7 @@ public class UserControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private UserProducer userProducer;
+    private UserService userService;
 
     @InjectMocks
     private UserController userController;
@@ -42,7 +45,7 @@ public class UserControllerTest {
     @Test
     void createUser_ShouldReturnSuccessMessage() throws Exception {
         // Arrange
-        UserCreatedDto userDto = UserCreatedDto
+        UserCreatedRequestDto userDto = UserCreatedRequestDto
                 .builder()
                 .id(1)
                 .name("John Doe")
@@ -52,14 +55,32 @@ public class UserControllerTest {
 
         String userDtoJson = objectMapper.writeValueAsString(userDto);
 
+        UserCreatedResponseDto responseDto= UserCreatedResponseDto
+                .builder()
+                .id(1)
+                .name("John Doe")
+                .email("john.doe@example.com")
+                .age(30)
+                .build();
+
+        GenericResponseDto<UserCreatedResponseDto> userCreatedResponseDto = GenericResponseDto.<UserCreatedResponseDto>builder()
+                .data(responseDto)
+                .status(GenericResponseStatus.SUCCESS)
+                .build();
+
+        String userCreatedResponseDtoJson = objectMapper.writeValueAsString(userCreatedResponseDto);
+
+        when(userService.sendUser(any(UserCreatedRequestDto.class)))
+                .thenReturn(userCreatedResponseDto);
+
         // Act & Assert
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(userDtoJson))
                 .andExpect(status().isOk())
-                .andExpect(content().string("User created successfully"));
+                .andExpect(content().json(userCreatedResponseDtoJson));
 
         // Verify the interaction with the userProducer
-        verify(userProducer, times(1)).sendUser(any(User.class));
+        verify(userService, times(1)).sendUser(any(UserCreatedRequestDto.class));
     }
 }
