@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.kafka.template.controllerAdvice.RestResponseEntityExceptionHandler;
 import org.kafka.template.dtos.GenericResponseDto;
 import org.kafka.template.dtos.UserCreatedRequestDto;
 import org.kafka.template.base.BaseKafkaFunctionalSpec;
@@ -18,7 +19,7 @@ import java.util.UUID;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
-class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
+class UserProducerCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
 
     @Test
     void givenInvalidUser_SchemaValidationWillFail_OnProducerSide() throws Exception {
@@ -31,7 +32,19 @@ class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
         // When we try to create the user
         WebTestClient.ResponseSpec response = webActor.createUser(userDto);
 
-        response.expectStatus().is5xxServerError();
+        response.expectStatus().isBadRequest();
+
+        RestResponseEntityExceptionHandler.ApiError responseBody = response
+                .expectBody(RestResponseEntityExceptionHandler.ApiError.class)
+                .returnResult()
+                .getResponseBody();
+
+        // And we expect an error response
+        assertNotNull(responseBody);
+        assertEquals(400, responseBody.getStatus());
+        assertEquals("POST", responseBody.getMethod());
+        assertEquals("/users", responseBody.getPath());
+        assertEquals(List.of("#/name: expected type: String, found: "), responseBody.getErrors());
 
         // Then we expect the schema validation to fail
         await().untilAsserted(() -> {
@@ -44,6 +57,7 @@ class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
         // Given we have a user with valid data
         UserCreatedRequestDto userDto = UserCreatedRequestDto
                 .builder()
+
                 .id(1)
                 .name("John Doe")
                 .email("john.doe@mail.com")

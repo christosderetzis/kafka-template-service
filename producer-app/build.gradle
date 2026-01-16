@@ -55,7 +55,9 @@ def jacocoExclusions = [
         'org.kafka.template.enums.*',
         'org.kafka.template.enums.**',
         'org.kafka.template.*ProducerModuleApplication*',
-        '**.*MapperImpl'
+        '**.*MapperImpl',
+        'org.kafka.template.utils.ServletUtils*',
+        'org.kafka.template.controllerAdvice.*',
 ]
 
 jacocoTestReport {
