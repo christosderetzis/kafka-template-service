@@ -4,13 +4,14 @@ import ch.qos.logback.classic.Level;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.kafka.template.base.BaseKafkaFunctionalSpec;
+import org.kafka.template.entity.UserEntity;
 import org.kafka.template.models.User;
 
 import java.util.UUID;
 
 import static org.awaitility.Awaitility.await;
 
-class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
+class UserConsumerFunctionalTest extends BaseKafkaFunctionalSpec {
 
     @Test
     void givenValidUser_consumerWillConsumeIt() throws Exception {
@@ -30,6 +31,15 @@ class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
         await().untilAsserted(() -> {
             Assertions.assertTrue(assertLog(Level.INFO, "Consumed valid user: User(id=1, name=John Doe, email=john.doe@mail.com, age=30)"));
         });
+
+        // And we expect the user to be saved in the database
+        UserEntity savedUser = userRepository.findAll().get(0);
+
+        Assertions.assertNotNull(savedUser);
+        Assertions.assertEquals(1, savedUser.getUserId());
+        Assertions.assertEquals("john.doe@mail.com", savedUser.getEmail());
+        Assertions.assertEquals(30, savedUser.getAge());
+        Assertions.assertEquals("John Doe", savedUser.getName());
     }
 
     @Test
@@ -50,6 +60,15 @@ class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
         await().untilAsserted(() -> {
             Assertions.assertTrue(assertLog(Level.WARN, "Underage user detected: User(id=3, name=Jane Doe, email=null, age=15)"));
         });
+
+        // And we expect the user to be saved in the database
+        UserEntity savedUser = userRepository.findAll().get(0);
+
+        Assertions.assertNotNull(savedUser);
+        Assertions.assertEquals(3, savedUser.getUserId());
+        Assertions.assertNull(savedUser.getEmail());
+        Assertions.assertEquals(15, savedUser.getAge());
+        Assertions.assertEquals("Jane Doe", savedUser.getName());
     }
 
     @Test
@@ -67,5 +86,8 @@ class UserCreatedFunctionalTest extends BaseKafkaFunctionalSpec {
             Assertions.assertTrue(assertLog(Level.ERROR, "Invalid user payload received:"));
         });
         Assertions.assertEquals(1, kafkaActor.consume(10000, "user-created-dlt").size());
+
+        // and no user is saved in the database
+        Assertions.assertEquals(0, userRepository.count());
     }
 }

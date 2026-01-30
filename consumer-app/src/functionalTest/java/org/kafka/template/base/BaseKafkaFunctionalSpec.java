@@ -14,6 +14,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.kafka.template.actors.KafkaActor;
+import org.kafka.template.repository.UserRepository;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -26,6 +27,7 @@ import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
@@ -61,13 +63,27 @@ public class BaseKafkaFunctionalSpec {
                             "PLAINTEXT://kafka:9092")
                     .waitingFor(Wait.forHttp("/subjects").forStatusCode(200));
 
+    private static final PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:17-alpine")
+            .withNetwork(network)
+            .withNetworkAliases("postgres")
+            .withUsername("consumer_user")
+            .withPassword("consumer_pass")
+            .withDatabaseName("test")
+            .withInitScript("initial-state.sql");
+
     @Autowired
     protected KafkaActor kafkaActor;
+
+    @Autowired
+    protected UserRepository userRepository;
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
         registry.add("spring.kafka.schema-registry-url", () -> "http://" + schemaRegistry.getHost() + ":" + schemaRegistry.getFirstMappedPort());
+        registry.add("spring.datasource.url", postgresContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", postgresContainer::getUsername);
+        registry.add("spring.datasource.password", postgresContainer::getPassword);
 
         // Disable SASL for tests (TestContainers Kafka uses PLAINTEXT)
         registry.add("spring.kafka.security.protocol", () -> "PLAINTEXT");
@@ -131,12 +147,14 @@ public class BaseKafkaFunctionalSpec {
     void setup() {
         startLogAppender();
         appender.list.clear();
+        userRepository.deleteAll();
     }
 
     @BeforeAll
      static void setupContainer() throws IOException, InterruptedException, JSONException {
         kafkaContainer.start();
         schemaRegistry.start();
+        postgresContainer.start();
         insertSchemaToCluster("user-created", "schemas/user-schema.json");
     }
 
@@ -147,6 +165,9 @@ public class BaseKafkaFunctionalSpec {
         }
         if (schemaRegistry.isRunning()) {
             schemaRegistry.stop();
+        }
+        if (postgresContainer.isRunning()) {
+            postgresContainer.stop();
         }
         network.close();
     }

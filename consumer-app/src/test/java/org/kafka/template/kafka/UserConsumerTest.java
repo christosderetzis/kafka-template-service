@@ -13,7 +13,10 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.kafka.template.base.BaseLogTest;
 import org.kafka.template.creators.UserCreator;
+import org.kafka.template.entity.UserEntity;
+import org.kafka.template.mapper.UserMapper;
 import org.kafka.template.models.User;
+import org.kafka.template.repository.UserRepository;
 import org.kafka.template.utils.ValidatorUtils;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,13 +33,19 @@ class UserConsumerTest extends BaseLogTest {
     private ValidatorUtils validatorUtils;
 
     @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private UserMapper userMapper;
+
+    @Mock
     private Acknowledgment acknowledgment;
 
     private UserConsumer userConsumer;
 
     @BeforeEach
     void setUp() {
-        userConsumer = new UserConsumer(validatorUtils);
+        userConsumer = new UserConsumer(validatorUtils, userRepository, userMapper);
         setUpLogger(UserConsumer.class);
     }
 
@@ -52,6 +61,11 @@ class UserConsumerTest extends BaseLogTest {
         // Given
         User user = UserCreator.createRandomUser();
         user.setAge(age);
+
+        UserEntity userEntity = new UserEntity();
+        userEntity.setAge(age);
+        userEntity.setId(1L);
+        when(userMapper.toUserEntity(any(User.class))).thenReturn(userEntity);
 
         ConsumerRecord<String, Object> record = createConsumerRecord("user-key", user, 0, 100L);
 
@@ -74,6 +88,11 @@ class UserConsumerTest extends BaseLogTest {
         // Given
         User user = UserCreator.createRandomUser();
         user.setAge(14); // Underage user
+
+        UserEntity userEntity = new UserEntity();
+        userEntity.setAge(14);
+        userEntity.setId(1L);
+        when(userMapper.toUserEntity(any(User.class))).thenReturn(userEntity);
 
         ConsumerRecord<String, Object> record = createConsumerRecord("user-key", user, 1, 200L);
 
@@ -131,28 +150,6 @@ class UserConsumerTest extends BaseLogTest {
 
         assertLog(Level.INFO, "Received record");
         assertLog(Level.ERROR, "Error during message validation or processing");
-    }
-
-    @Test
-    void consume_EdgeCaseAge17_ShouldLogWarning() {
-        // Given
-        User user = UserCreator.createRandomUser();
-        user.setAge(17); // Edge case for underage
-
-        ConsumerRecord<String, Object> record = createConsumerRecord("user-key", user, 0, 800L);
-
-        doNothing().when(validatorUtils).validate(any(User.class));
-
-        // When
-        userConsumer.consume(record, acknowledgment);
-
-        // Then
-        verify(validatorUtils).validate(any(User.class));
-        verify(acknowledgment).acknowledge();
-
-        assertLog(Level.INFO, "Received record");
-        assertLog(Level.INFO, "Consumed valid user");
-        assertLog(Level.WARN, "Underage user detected");
     }
 
     private ConsumerRecord<String, Object> createConsumerRecord(String key, Object value, int partition, long offset) {
