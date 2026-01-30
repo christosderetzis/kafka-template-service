@@ -57,6 +57,8 @@ Before running the application modules, start the required services (Kafka, Zook
 docker-compose up -d
 ```
 
+The default `docker-compose.yml` includes SASL authentication. See [Security Configuration](#security-configuration) for details.
+
 ### Extended Docker Compose
 
 For a more complete environment, including Kafka Connect, ksqlDB, and the Confluent Control Center, you can use the extended Docker Compose file:
@@ -64,6 +66,8 @@ For a more complete environment, including Kafka Connect, ksqlDB, and the Conflu
 ```bash
 docker-compose -f docker-compose-confluent.yml up -d
 ```
+
+This also includes SASL authentication. All Confluent services (Schema Registry, Kafka Connect, ksqlDB, Control Center) are configured to authenticate with Kafka.
 
 ### Uploading the schema
 
@@ -139,6 +143,87 @@ The `UserProducer` class is responsible for sending user information to the `use
 ### User Consumer
 
 The `UserConsumer` class is responsible for consuming user information from the `user-created` topic. It validates the user data and logs a warning if the user is underage.
+
+## Security Configuration
+
+The application uses **SASL_PLAINTEXT** authentication with the **PLAIN** mechanism for Kafka communication.
+
+### Kafka Broker Authentication
+
+The `docker-compose.yml` configures Kafka with SASL authentication. The broker uses `kafka_server_jaas.conf` for user credentials:
+
+| Username | Password | Description |
+|----------|----------|-------------|
+| `admin` | `admin-secret` | Inter-broker communication & default user |
+| `producer` | `producer-secret` | For producer applications |
+| `consumer` | `consumer-secret` | For consumer applications |
+
+### Application Configuration
+
+Both producer and consumer applications are configured via `application.yml`:
+
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    security:
+      protocol: SASL_PLAINTEXT
+    sasl:
+      mechanism: PLAIN
+      jaas:
+        username: ${KAFKA_SASL_USERNAME:admin}
+        password: ${KAFKA_SASL_PASSWORD:admin-secret}
+```
+
+### Environment Variables
+
+Override credentials using environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `KAFKA_SASL_USERNAME` | `admin` | SASL username for Kafka authentication |
+| `KAFKA_SASL_PASSWORD` | `admin-secret` | SASL password for Kafka authentication |
+
+**Example:**
+
+```bash
+# Run producer with custom credentials
+KAFKA_SASL_USERNAME=producer KAFKA_SASL_PASSWORD=producer-secret ./gradlew :producer-app:bootRun
+
+# Run consumer with custom credentials
+KAFKA_SASL_USERNAME=consumer KAFKA_SASL_PASSWORD=consumer-secret ./gradlew :consumer-app:bootRun
+```
+
+### Adding New Users
+
+To add new Kafka users, edit `kafka_server_jaas.conf`:
+
+```
+KafkaServer {
+    org.apache.kafka.common.security.plain.PlainLoginModule required
+    username="admin"
+    password="admin-secret"
+    user_admin="admin-secret"
+    user_newuser="newuser-password";  # Add new users here
+};
+```
+
+Then restart the Kafka broker:
+
+```bash
+docker-compose restart broker
+```
+
+### Disabling SASL (Development Only)
+
+To run without SASL authentication, set the security protocol to `PLAINTEXT`:
+
+```bash
+# Via environment variable (not recommended)
+# You would need to also update docker-compose.yml to disable SASL on the broker
+```
+
+**Note:** The functional tests automatically use PLAINTEXT protocol with TestContainers Kafka, so no additional configuration is needed for testing.
 
 ## Testing
 
@@ -264,13 +349,17 @@ http_server_requests_seconds_count
 
 ### Port Summary
 
-- **Consumer App**: 9090 - Kafka consumer + actuator endpoints
-- **Producer App**: 9091 - REST API + actuator endpoints
-- **Prometheus**: 9092 - Metrics collection
-- **Grafana**: 3000 - Metrics visualization
-- **Kafka**: 9092 (internal) - Message broker
-- **Schema Registry**: 8081 - Schema management
-- **Zipkin**: 9411 - Distributed tracing
+| Service | Port | Description |
+|---------|------|-------------|
+| Consumer App | 9090 | Kafka consumer + actuator endpoints |
+| Producer App | 9091 | REST API + actuator endpoints |
+| Kafka | 9092 | Message broker (SASL_PLAINTEXT) |
+| Prometheus | 9093 | Metrics collection |
+| Grafana | 3000 | Metrics visualization |
+| Schema Registry | 8081 | Schema management |
+| Kafka UI | 8080 | Kafka management interface |
+| Zipkin | 9411 | Distributed tracing |
+| Zookeeper | 2181 | Kafka coordination |
 
 ## Dependencies
 

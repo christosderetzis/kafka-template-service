@@ -7,9 +7,11 @@ import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +37,18 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.schema-registry-url}")
     private String schemaRegistryUrl;
 
+    @Value("${spring.kafka.security.protocol}")
+    private String securityProtocol;
+
+    @Value("${spring.kafka.sasl.mechanism}")
+    private String saslMechanism;
+
+    @Value("${spring.kafka.sasl.jaas.username}")
+    private String saslUsername;
+
+    @Value("${spring.kafka.sasl.jaas.password}")
+    private String saslPassword;
+
     @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
         Map<String, Object> config = new HashMap<>();
@@ -42,6 +56,18 @@ public class KafkaConsumerConfig {
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaJsonSchemaDeserializer.class);
         config.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
+
+        // Security Protocol
+        config.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
+
+        // SASL Authentication (only when using SASL protocols)
+        if (securityProtocol.contains("SASL")) {
+            config.put(SaslConfigs.SASL_MECHANISM, saslMechanism);
+            config.put(SaslConfigs.SASL_JAAS_CONFIG, String.format(
+                    "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"%s\" password=\"%s\";",
+                    saslUsername, saslPassword));
+        }
+
         return new DefaultKafkaConsumerFactory<>(config);
     }
 
@@ -78,6 +104,18 @@ public class KafkaConsumerConfig {
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaJsonSchemaSerializer.class);
         config.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
+
+        // Security Protocol
+        config.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
+
+        // SASL Authentication (only when using SASL protocols)
+        if (securityProtocol.contains("SASL")) {
+            config.put(SaslConfigs.SASL_MECHANISM, saslMechanism);
+            config.put(SaslConfigs.SASL_JAAS_CONFIG, String.format(
+                    "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"%s\" password=\"%s\";",
+                    saslUsername, saslPassword));
+        }
+
         return new DefaultKafkaProducerFactory<>(config);
     }
 

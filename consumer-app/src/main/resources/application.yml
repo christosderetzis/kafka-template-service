@@ -2,10 +2,17 @@ spring:
   application:
     name: kafka-template-service
   kafka:
-    bootstrap-servers: http://localhost:9092
+    bootstrap-servers: localhost:9092
     schema-registry-url: http://localhost:8081
     topics:
       user-created: user-created
+    security:
+      protocol: SASL_PLAINTEXT
+    sasl:
+      mechanism: PLAIN
+      jaas:
+        username: ${KAFKA_SASL_USERNAME:admin}
+        password: ${KAFKA_SASL_PASSWORD:admin-secret}
 server:
   port: 9090
 logging:
