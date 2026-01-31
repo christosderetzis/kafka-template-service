@@ -21,6 +21,13 @@ spring:
         format_sql: true
         jdbc:
           time_zone: UTC
+    security:
+      protocol: SASL_PLAINTEXT
+    sasl:
+      mechanism: PLAIN
+      jaas:
+        username: ${KAFKA_SASL_USERNAME:admin}
+        password: ${KAFKA_SASL_PASSWORD:admin-secret}
 server:
   port: 9090
 logging:

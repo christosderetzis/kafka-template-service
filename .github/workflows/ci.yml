@@ -57,6 +57,16 @@ jobs:
     - name: Run functional tests
       run: ./gradlew functionalTest
 
+    - name: Upload test reports on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-reports
+        path: |
+          **/build/reports/tests/
+          **/build/reports/functionalTest/
+        retention-days: 7
+
     - name: Generate test coverage report
       run: ./gradlew jacocoTestReport
 

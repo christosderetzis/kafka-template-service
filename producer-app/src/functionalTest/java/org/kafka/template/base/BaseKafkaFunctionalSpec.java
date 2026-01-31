@@ -81,6 +81,12 @@ public class BaseKafkaFunctionalSpec {
         registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
         registry.add("spring.kafka.schema-registry-url", () -> "http://" + schemaRegistry.getHost() + ":" + schemaRegistry.getFirstMappedPort());
 
+        // Disable SASL for tests (TestContainers Kafka uses PLAINTEXT)
+        registry.add("spring.kafka.security.protocol", () -> "PLAINTEXT");
+        registry.add("spring.kafka.sasl.mechanism", () -> "");
+        registry.add("spring.kafka.sasl.jaas.username", () -> "");
+        registry.add("spring.kafka.sasl.jaas.password", () -> "");
+
         // Register the ObjectMapper as a bean if needed
         registry.add("objectMapper", () -> OBJECT_MAPPER);
     }

@@ -34,8 +34,11 @@ import org.testcontainers.utility.DockerImageName;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.awaitility.Awaitility.setDefaultTimeout;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient(timeout = "PT30S")
@@ -84,6 +87,12 @@ public class BaseKafkaFunctionalSpec {
         registry.add("spring.datasource.url", postgresContainer::getJdbcUrl);
         registry.add("spring.datasource.username", postgresContainer::getUsername);
         registry.add("spring.datasource.password", postgresContainer::getPassword);
+
+        // Disable SASL for tests (TestContainers Kafka uses PLAINTEXT)
+        registry.add("spring.kafka.security.protocol", () -> "PLAINTEXT");
+        registry.add("spring.kafka.sasl.mechanism", () -> "");
+        registry.add("spring.kafka.sasl.jaas.username", () -> "");
+        registry.add("spring.kafka.sasl.jaas.password", () -> "");
 
         // Register the ObjectMapper as a bean if needed
         registry.add("objectMapper", () -> OBJECT_MAPPER);
@@ -146,6 +155,7 @@ public class BaseKafkaFunctionalSpec {
 
     @BeforeAll
      static void setupContainer() throws IOException, InterruptedException, JSONException {
+        setDefaultTimeout(Duration.ofSeconds(30));
         kafkaContainer.start();
         schemaRegistry.start();
         postgresContainer.start();
