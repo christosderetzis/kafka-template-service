@@ -34,8 +34,11 @@ import org.testcontainers.utility.DockerImageName;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.awaitility.Awaitility.setDefaultTimeout;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient(timeout = "PT30S")
@@ -152,6 +155,7 @@ public class BaseKafkaFunctionalSpec {
 
     @BeforeAll
      static void setupContainer() throws IOException, InterruptedException, JSONException {
+        setDefaultTimeout(Duration.ofSeconds(30));
         kafkaContainer.start();
         schemaRegistry.start();
         postgresContainer.start();

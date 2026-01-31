@@ -27,19 +27,16 @@ class UserConsumerFunctionalTest extends BaseKafkaFunctionalSpec {
         // When we try to create the user
         kafkaActor.produce(UUID.randomUUID().toString(), userDto, "user-created");
 
-        // Then we expect the schema validation to pass
+        // Then we expect the schema validation to pass and user to be saved
         await().untilAsserted(() -> {
             Assertions.assertTrue(assertLog(Level.INFO, "Consumed valid user: User(id=1, name=John Doe, email=john.doe@mail.com, age=30)"));
+            UserEntity savedUser = userRepository.findByUserId(1);
+            Assertions.assertNotNull(savedUser);
+            Assertions.assertEquals(1, savedUser.getUserId());
+            Assertions.assertEquals("john.doe@mail.com", savedUser.getEmail());
+            Assertions.assertEquals(30, savedUser.getAge());
+            Assertions.assertEquals("John Doe", savedUser.getName());
         });
-
-        // And we expect the user to be saved in the database
-        UserEntity savedUser = userRepository.findAll().get(0);
-
-        Assertions.assertNotNull(savedUser);
-        Assertions.assertEquals(1, savedUser.getUserId());
-        Assertions.assertEquals("john.doe@mail.com", savedUser.getEmail());
-        Assertions.assertEquals(30, savedUser.getAge());
-        Assertions.assertEquals("John Doe", savedUser.getName());
     }
 
     @Test
@@ -56,19 +53,16 @@ class UserConsumerFunctionalTest extends BaseKafkaFunctionalSpec {
         // When we produce the user to the Kafka topic
         kafkaActor.produce(UUID.randomUUID().toString(), user, "user-created");
 
-        // Then we expect a warning log for underage user
+        // Then we expect a warning log for underage user and user to be saved
         await().untilAsserted(() -> {
             Assertions.assertTrue(assertLog(Level.WARN, "Underage user detected: User(id=3, name=Jane Doe, email=null, age=15)"));
+            UserEntity savedUser = userRepository.findByUserId(3);
+            Assertions.assertNotNull(savedUser);
+            Assertions.assertEquals(3, savedUser.getUserId());
+            Assertions.assertNull(savedUser.getEmail());
+            Assertions.assertEquals(15, savedUser.getAge());
+            Assertions.assertEquals("Jane Doe", savedUser.getName());
         });
-
-        // And we expect the user to be saved in the database
-        UserEntity savedUser = userRepository.findAll().get(0);
-
-        Assertions.assertNotNull(savedUser);
-        Assertions.assertEquals(3, savedUser.getUserId());
-        Assertions.assertNull(savedUser.getEmail());
-        Assertions.assertEquals(15, savedUser.getAge());
-        Assertions.assertEquals("Jane Doe", savedUser.getName());
     }
 
     @Test
@@ -81,13 +75,12 @@ class UserConsumerFunctionalTest extends BaseKafkaFunctionalSpec {
         // when we produce the user to the Kafka topic
         kafkaActor.produce(UUID.randomUUID().toString(), user, "user-created");
 
-        // then we expect the schema validation to fail
+        // then we expect the schema validation to fail and message sent to DLT
         await().untilAsserted(() -> {
             Assertions.assertTrue(assertLog(Level.ERROR, "Invalid user payload received:"));
+            Assertions.assertEquals(1, kafkaActor.consume(10000, "user-created-dlt").size());
+            // and no user is saved in the database
+            Assertions.assertEquals(0, userRepository.count());
         });
-        Assertions.assertEquals(1, kafkaActor.consume(10000, "user-created-dlt").size());
-
-        // and no user is saved in the database
-        Assertions.assertEquals(0, userRepository.count());
     }
 }
